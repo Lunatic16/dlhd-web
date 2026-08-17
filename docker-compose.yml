@@ -1,0 +1,12 @@
+services:
+  daddylive-resolver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: daddylive-resolver
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DLHD_BASE=https://dlhd.st
+    restart: unless-stopped
