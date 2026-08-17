@@ -1,0 +1,16 @@
+{
+  "name": "daddylive-stream-resolver",
+  "version": "0.0.0",
+  "description": "Resolve DaddyLive (DLHD) watch pages into direct HLS (.m3u8) and WebM stream URLs. TypeScript scraper fetches player embeds; pure resolver decrypts daddy3, plus, hub, and CDN payloads. Referer-aware proxy for playback, web UI for all seven DLHD players, VLC and MPV export links, and a library API for custom pipelines.",
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist && tsc && mkdir -p dist/web && cp src/web/style.css dist/web/",
+    "typecheck": "tsc --noEmit",
+    "start": "sh -c 'lsof -ti:${PORT:-3000} | xargs kill -9 2>/dev/null; npm run build && node dist/server/index.js'"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}
