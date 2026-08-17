@@ -8,16 +8,17 @@ Resolve DaddyLive player pages into direct **HLS** (`.m3u8`) and WebM stream URL
 
 1. [Scraper vs resolver](#scraper-vs-resolver)
 2. [Quick start](#quick-start)
-3. [Using the web UI](#using-the-web-ui)
-4. [Player endpoints](#player-endpoints)
-5. [Export options](#export-options)
-6. [Architecture](#architecture)
-7. [Project layout](#project-layout)
-8. [HTTP API](#http-api)
-9. [Library API](#library-api)
-10. [Configuration](#configuration)
-11. [Development](#development)
-12. [Known limits](#known-limits)
+3. [Running with Docker](#running-with-docker)
+4. [Using the web UI](#using-the-web-ui)
+5. [Player endpoints](#player-endpoints)
+6. [Export options](#export-options)
+7. [Architecture](#architecture)
+8. [Project layout](#project-layout)
+9. [HTTP API](#http-api)
+10. [Library API](#library-api)
+11. [Configuration](#configuration)
+12. [Development](#development)
+13. [Known limits](#known-limits)
 
 ---
 
@@ -65,6 +66,26 @@ npm start
 ```
 
 Open `http://localhost:3000`. Set `PORT` to bind another port.
+
+---
+
+## Running with Docker
+
+### Using Docker Compose (Recommended)
+
+```bash
+docker compose up -d
+```
+
+### Using Docker CLI
+
+```bash
+# Build image
+docker build -t daddylive-stream-resolver .
+
+# Run container
+docker run -d -p 3000:3000 --name daddylive-resolver daddylive-stream-resolver
+```
 
 ---
 
