@@ -37,10 +37,17 @@ export function renderPage(): string {
 <body>
 <main class="app">
 <header class="top">
+<div class="top__header-row">
 <div class="top__badge"><span class="top__badge-dot"></span> DLHD Live Engine</div>
+<a href="/playlist.m3u8" download="playlist.m3u8" class="top__download-btn">
+<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+<span>Download M3U8 Playlist</span>
+</a>
+</div>
 <h1 class="top__title">${esc(SITE_TITLE)}</h1>
 <p class="top__desc">Stream 24/7 TV channels directly with referer-bypass HLS proxying, player failovers, and low-latency playback.</p>
 </header>
+
 
 <section class="card card--glass" aria-labelledby="resolve-heading">
 <h2 id="resolve-heading" class="visually-hidden">Resolve channel</h2>

@@ -1,5 +1,6 @@
 export type { Channel } from "./channels/index.js";
-export { fetchChannelList, fetchChannelInfo, parseChannelList, watchUrl, playerPageUrl } from "./channels/index.js";
+export { fetchChannelList, fetchChannelInfo, parseChannelList, watchUrl, playerPageUrl, generateM3u8Playlist, sanitizeTvgName } from "./channels/index.js";
+
 export type { ServerKind } from "./players/types.js";
 export { PLAYERS, PLAYER_IDS, playerLabel } from "./players/types.js";
 export type { AdBlockConfig, HubConfig, ResolvedStream } from "./resolver/types.js";

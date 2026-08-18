@@ -1,75 +1,92 @@
-# DaddyLive Stream HLS Resolver
+<div align="center">
 
-Resolve DaddyLive player pages into direct **HLS** (`.m3u8`) and WebM stream URLs, proxy with embed referer, play in-browser, and copy **VLC** or **MPV** commands.
+# 📺 DaddyLive Stream HLS Resolver
 
----
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Table of contents
+**High-performance, referer-aware DaddyLive (DLHD) stream engine & dynamic IPTV playlist provider.**
 
-1. [Scraper vs resolver](#scraper-vs-resolver)
-2. [Quick start](#quick-start)
-3. [Running with Docker](#running-with-docker)
-4. [Using the web UI](#using-the-web-ui)
-5. [Player endpoints](#player-endpoints)
-6. [Export options](#export-options)
-7. [Architecture](#architecture)
-8. [Project layout](#project-layout)
-9. [HTTP API](#http-api)
-10. [Library API](#library-api)
-11. [Configuration](#configuration)
-12. [Development](#development)
-13. [Known limits](#known-limits)
+Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams, proxies traffic with referer bypass headers, provides dynamic IPTV playlist generation (`.m3u8`), and enables single-click **VLC** / **MPV** stream exports.
+
+[Quick Start](#-quick-start) • [Dynamic IPTV Playlist](#-dynamic-iptv-playlist) • [HTTP API](#-http-api) • [Docker Deployment](#-running-with-docker) • [Architecture](#-architecture)
+
+</div>
 
 ---
 
-## Scraper vs resolver
+## ⚡ Features
 
-Two separate jobs, two separate code areas:
-
-| | Scraper | Resolver |
-| --- | --- | --- |
-| **Input** | DLHD URLs | HTML strings |
-| **Output** | Parsed pages, channel lists, embed HTML | Playable stream URLs |
-| **Network** | Yes — `fetch` with browser-like headers | No — pure parse/decrypt |
-| **Location** | `channels/`, `server/fetch.ts`, `http.ts` | `resolver/` |
-
-### What the scraper does
-
-1. **Channel catalog** — fetches the 24/7 channels listing page (`/24-7-channels.php`) and parses cards/watch links into `{ id, name }` (`channels/parse.ts`, `channels/fetch.ts`).
-2. **Player pages** — fetches `/stream/stream-{id}.php` (and cast, watch, plus, etc.).
-3. **Embed chains** — follows iframe `src` hops and scripted redirects (wikisport, blogger-player, tinyurl) until the page contains a playable stream marker.
-
-### What the resolver does
-
-1. **Extract** — scans embed HTML for known player families (daddy3, plus, hub, cdnlivetv, wideiptv, igniteandship).
-2. **Decrypt** — reverses XOR payloads, AES-CBC hub configs, plus obfuscation, and base64 wrappers in `resolver/crypto/`.
-3. **Return** — a `ResolvedStream` with `playableUrl`, `mimeType`, and the embed page URL to use as referer.
-
-The resolver never calls `fetch`. You can test it offline against saved HTML in `tmp/` while the scraper handles all live HTTP.
+- 🍿 **7 Multi-Player Failovers** — Automatically resolves across 7 DLHD player embeds (`stream`, `cast`, `watch`, `plus`, `casting`, `player`, `hub`).
+- 📻 **Dynamic IPTV M3U8 Playlist** — Serves standard IPTV playlists (`GET /playlist.m3u8`) compatible with **VLC**, **TiviMate**, **Kodi**, **IPTV Smarters**, **Plex**, and **Jellyfin**.
+- 🔄 **On-Demand Stream Resolver** — Redirects (`GET /api/stream/{channelId}.m3u8`) media players on-demand with live tokens.
+- 🛡️ **Referer Bypass Proxy** — Seamlessly proxies HLS master & segment playlists while injecting required upstream embed headers.
+- 🖥️ **Modern Web Interface** — Sleek dark UI with live SSE progress tracking, search filtering, and one-click VLC/MPV command builders.
+- ⚡ **Pure Resolver Core** — Offline-capable decryption routines (XOR, AES-CBC, Base64, obfuscation) separated from the live network scraper.
 
 ---
 
-## Quick start
+## 📋 Table of Contents
 
-### Requirements
+1. [Quick Start](#-quick-start)
+2. [Dynamic IPTV Playlist](#-dynamic-iptv-playlist)
+3. [Running with Docker](#-running-with-docker)
+4. [Using the Web UI](#-using-the-web-ui)
+5. [Scraper vs Resolver](#-scraper-vs-resolver)
+6. [Player Endpoints](#-player-endpoints)
+7. [HTTP API](#-http-api)
+8. [Architecture](#-architecture)
+9. [Project Layout](#-project-layout)
+10. [Library API](#-library-api)
+11. [Configuration](#-configuration)
+12. [Development & Testing](#-development)
+13. [Known Limits](#-known-limits)
 
-- Node.js 20+
-- npm
+---
 
-### Run locally
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Node.js**: `v20.0.0` or higher
+- **npm**: `v9.0.0` or higher
+
+### Local Setup
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/Lunatic16/dlhd-web.git
 cd dlhd-web
+
+# 2. Install dependencies & build
 npm install
+
+# 3. Start server
 npm start
 ```
 
-Open `http://localhost:3000`. Set `PORT` to bind another port.
+> [!TIP]
+> The server will start on `http://localhost:3000`. You can pass `PORT=8080 npm start` to bind a custom port.
 
 ---
 
-## Running with Docker
+## 📺 Dynamic IPTV Playlist
+
+Integrate all 24/7 channels directly into your favorite IPTV app or media client:
+
+> **M3U Playlist URL:**  
+> `http://localhost:3000/playlist.m3u8`
+
+### Playlist Capabilities:
+- Includes formatted `#EXTINF` tags: `tvg-id`, `tvg-name`, and `group-title="DaddyLive 24/7"`.
+- Each channel routes to `/api/stream/{channelId}.m3u8`, which dynamically negotiates live embed tokens and proxies the HLS stream on player request.
+- Compatible with **TiviMate**, **VLC**, **Kodi**, **IPTV Smarters**, **Plex / Jellyfin (xTeVe/Threadfin)**.
+
+---
+
+## 🐳 Running with Docker
 
 ### Using Docker Compose (Recommended)
 
@@ -89,94 +106,93 @@ docker run -d -p 3000:3000 --name daddylive-resolver daddylive-stream-resolver
 
 ---
 
-## Using the web UI
+## 🌐 Using the Web UI
 
-The home page is a single-screen resolver — no navigation after you submit.
+The home page is a responsive single-screen stream dashboard:
 
-### Resolve a channel
+1. **Select / Filter**: Search channels by name or ID in the top input.
+2. **Resolve**: Click **Resolve Stream**. The server will sequentially query players 1 through 7 via Server-Sent Events (SSE).
+3. **Playback & Switch**: Playback starts automatically on the first valid stream. Tap any server badge to switch players.
+4. **Export**: Grab direct URLs, proxied URLs, or copy ready-to-run VLC / MPV terminal commands.
 
-1. Open `/` in your browser.
-2. Select a channel from the **Select Channel** dropdown or type into **Filter Channels** to narrow down by channel name or ID.
-3. Click **Resolve Stream**.
+---
 
-### What happens next
+## 🧩 Scraper vs Resolver
 
-- All seven players resolve **sequentially** in DLHD order (PLAYER 1 → PLAYER 7).
-- Each badge shows resolve time; failures display a short error on the badge.
-- When two players share the same embed, the later one is marked with a duplicate tag.
-- The first successful player starts in-browser playback automatically; click any badge to switch.
-- You can filter or select another channel anytime — the **Resolve Stream** button remains enabled once a player resolves or a new channel is picked.
-
-### Playback
-
-| Format | In-browser | Notes |
+| Aspect | 🌐 Scraper | 🔑 Resolver |
 | --- | --- | --- |
-| HLS (`.m3u8`) | hls.js or native Safari | Most players |
-| WebM | Native `<video>` | PLAYER 7 (hub) |
+| **Primary Input** | DLHD Watch URLs | Raw HTML strings |
+| **Output** | Parsed channel lists, embed HTML | `ResolvedStream` object (playable URL, referer) |
+| **Network Call** | Yes (`fetch` with Chrome User-Agent) | No (Pure text decryption & AST parsing) |
+| **Location** | `src/channels/`, `src/server/fetch.ts` | `src/resolver/` |
+
+> [!NOTE]
+> Separating the resolver allows zero-network unit testing against saved HTML fixtures in `tmp/`.
 
 ---
 
-## Player endpoints
+## 🎯 Player Endpoints
 
-Each UI label maps to a DLHD path segment and an internal `ServerKind` id.
+Each UI player corresponds to a DaddyLive embed provider:
 
-| UI label | Internal id | DLHD path |
+| UI Label | Internal ID | DLHD Path | Status / Notes |
+| --- | --- | --- | --- |
+| **PLAYER 1** | `stream` | `/stream/stream-{id}.php` | Primary HLS stream |
+| **PLAYER 2** | `cast` | `/cast/stream-{id}.php` | Requires browser context (CDN 403 on server fetch) |
+| **PLAYER 3** | `watch` | `/watch/stream-{id}.php` | Secondary HLS stream |
+| **PLAYER 4** | `plus` | `/plus/stream-{id}.php` | Plus obfuscated player |
+| **PLAYER 5** | `casting` | `/casting/stream-{id}.php` | Casting player |
+| **PLAYER 6** | `player` | `/player/stream-{id}.php` | Alternative embed player |
+| **PLAYER 7** | `hub` | `/hub/stream-{id}.php` | WebM / HLS Hub player |
+
+---
+
+## 📡 HTTP API
+
+All endpoints respond to **`GET`** requests:
+
+| Endpoint | Content-Type | Description |
 | --- | --- | --- |
-| PLAYER 1 | `stream` | `/stream/stream-{id}.php` |
-| PLAYER 2 | `cast` | `/cast/stream-{id}.php` |
-| PLAYER 3 | `watch` | `/watch/stream-{id}.php` |
-| PLAYER 4 | `plus` | `/plus/stream-{id}.php` |
-| PLAYER 5 | `casting` | `/casting/stream-{id}.php` |
-| PLAYER 6 | `player` | `/player/stream-{id}.php` |
-| PLAYER 7 | `hub` | `/hub/stream-{id}.php` |
-
-Source of truth: `src/players/types.ts`.
+| `GET /` | `text/html` | Main Web UI Application |
+| `GET /playlist.m3u8` | `application/vnd.apple.mpegurl` | Dynamic IPTV playlist containing all 24/7 channels |
+| `GET /api/stream/{channelId}.m3u8` | `HTTP 302 Redirect` | Resolves channel on-demand and redirects to proxied stream |
+| `GET /api/channels` | `application/json` | JSON list of available channels (`{ id, name }`) |
+| `GET /api/resolve/live?channel={id}` | `text/event-stream` | Real-time SSE stream resolving all 7 players |
+| `GET /api/proxy?url={url}&referer={ref}` | `stream/octet` | Proxies HLS manifests & segments with referer header |
 
 ---
 
-## Export options
-
-After a player resolves, the **Export** panel provides four outputs:
-
-| Export | Purpose |
-| --- | --- |
-| **Direct URL** | Upstream stream URL from the final embed page |
-| **Proxied URL** | Same stream via `/api/proxy` with the correct embed referer |
-| **VLC** | Shell command with `--http-referrer` |
-| **MPV** | Shell command with `--referrer` and optional media title |
-
-Use the proxied URL when the CDN rejects requests without the embed page referer.
-
----
-
-## Architecture
-
-The server orchestrates scrape → resolve → proxy. The diagram shows data flow; see [Scraper vs resolver](#scraper-vs-resolver) for what each layer owns.
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
-  subgraph web [Web UI]
+  subgraph UI [Web UI]
     Page[page.ts]
     App[app.ts]
   end
-  subgraph scrape [Scraper]
+
+  subgraph Scraper [Scraper Engine]
     Channels[channels/fetch]
     Fetch[server/fetch]
     Http[http.ts]
   end
-  subgraph resolve [Resolver]
+
+  subgraph Resolver [Resolver Core]
     Extract[extractors/embed]
     Crypto[crypto/*]
   end
-  subgraph server [Server]
+
+  subgraph Server [HTTP Server]
     Routes[index.ts]
     Live[resolve.ts]
     Proxy[proxy/stream]
+    Playlist[channels/m3u8]
   end
-  DLHD[(DLHD)] -->|HTML| Http
+
+  DLHD[(DLHD Base)] -->|HTML| Http
   Http --> Channels
   Http --> Fetch
-  Fetch -->|embed HTML| Extract
+  Fetch -->|Embed HTML| Extract
   Extract --> Crypto
   Live --> Fetch
   Live --> Extract
@@ -185,149 +201,85 @@ flowchart LR
   Routes --> Page
   Routes --> Live
   Routes --> Proxy
-  Page --> App
+  Routes --> Playlist
 ```
-
-### Live resolve sequence
-
-1. Server reads the channel name from the cached channel list (no extra request).
-2. For each player, scraper fetches the DLHD player page and walks the embed chain.
-3. Resolver extracts the playable URL from the final HTML.
-4. Server caches by embed URL, detects duplicates, and streams SSE events to the UI.
-5. Proxy serves bytes with the correct referer when playback needs it.
 
 ---
 
-## Project layout
+## 📁 Project Layout
 
 ```
 src/
-  channels/       Scraper: channel list parse + fetch (5 min cache)
-  players/        PLAYER 1–7 ids and labels
-  config.ts       DLHD_BASE
-  http.ts         Scraper: User-Agent, headers, fetchHtml
-  resolver/       Resolver: HTML → ResolvedStream (no fetch)
-    resolve.ts
-    types.ts
-    crypto/       Base64, XOR, AES-CBC, ad-config decrypt
-    extractors/   Per-embed-family parsers
-  proxy/          Referer-aware stream proxy + export link builders
-  server/         Orchestrates scrape + resolve over HTTP
-  web/            Static UI
-  index.ts        Library barrel export
+├── channels/       # Channel catalog scrapers & M3U8 playlist generators
+├── players/        # Player definitions & labels (PLAYER 1–7)
+├── proxy/          # Referer-aware HLS proxy & CLI export generators
+├── resolver/       # Pure HTML extractors & decryption algorithms
+│   ├── crypto/     # Base64, XOR, AES-CBC, and ad-config decryptors
+│   └── extractors/ # Individual player embed parsers
+├── server/         # Node.js HTTP server & SSE route handlers
+├── web/            # Single-page web app (HTML, TS, CSS)
+├── config.ts       # Global settings (DLHD_BASE)
+└── index.ts        # Library barrel exports
 ```
 
-Scratch scripts and saved HTML fixtures live in `tmp/` (not shipped).
-
 ---
 
-## HTTP API
+## 📦 Library API
 
-All routes are **GET**.
-
-### `GET /`
-
-HTML resolver UI.
-
-### `GET /api/channels`
-
-JSON array of `{ id, name }` parsed from `/24-7-channels.php`. Cached for five minutes server-side.
-
-### `GET /api/resolve/live?channel={id}`
-
-Server-Sent Events stream. Events:
-
-| Event | Payload |
-| --- | --- |
-| `channel` | `{ id, name }` from the cached channel list |
-| `start` | `{ server }` — player resolve started |
-| `found` | Export object: direct, proxied, vlc, mpv, timing, duplicate info |
-| `fail` | `{ server, label, error, ms }` |
-| `done` | `{ channelId, channel, servers }` |
-
-### `GET /api/proxy?url={stream}&referer={embed}`
-
-Proxies stream bytes with the embed referer. Playlists are rewritten so segment URLs route back through this proxy.
-
----
-
-## Library API
-
-Import from `src/index.ts` (compiled to `dist/index.js`):
+Use as an ES Module dependency:
 
 ```typescript
 import {
-  resolveFromHtml,          // resolver
-  extractPlayableFromHtml,  // resolver
-  parseChannelList,         // scraper (parse only)
-  fetchChannelList,         // scraper (live fetch, 5 min cache)
-  PLAYER_IDS,
+  resolveFromHtml,
+  fetchChannelList,
+  generateM3u8Playlist,
   buildProxyUrl,
 } from "daddylive-stream-resolver";
+
+// Fetch channels
+const channels = await fetchChannelList();
+
+// Generate M3U playlist string
+const playlist = generateM3u8Playlist(channels, "http://localhost:3000");
 ```
-
-### `ResolvedStream` type
-
-```typescript
-type ResolvedStream = {
-  channelId: number;
-  server: ServerKind;
-  embedUrl: string;
-  playableUrl: string;
-  mimeType: "application/x-mpegURL" | "video/webm";
-  meta: Record<string, string>;
-};
-```
-
-### Resolver extractor order
-
-`extractPlayableFromHtml` tries embed families until one matches: hub → plus → wideiptv → cdnlivetv → igniteandship → daddy3.
-
-Embed chain walking (wikisport, blogger-player) lives in the scraper (`server/fetch.ts`) before HTML reaches the resolver.
-
-### Offline vs live usage
-
-| Mode | Scraper | Resolver |
-| --- | --- | --- |
-| Offline | Read HTML from disk (`tmp/*.html`) | `extractPlayableFromHtml(html)` |
-| Live | `fetchChannelList()`, `resolveLive()` | Called internally after fetch |
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
-| Variable | Default | Description |
+Environment variables:
+
+| Variable | Default Value | Description |
 | --- | --- | --- |
-| `PORT` | `3000` | HTTP server port |
-| `DLHD_BASE` | `https://dlhd.st` | DaddyLive origin for fetches |
+| `PORT` | `3000` | HTTP server listening port |
+| `DLHD_BASE` | `https://dlhd.st` | Upstream DaddyLive domain base |
 
 ---
 
-## Development
+## 🛠️ Development
 
 ```bash
-npm run build      # tsc → dist/, copy style.css
-npm run typecheck  # tsc --noEmit
-npm start          # build + node dist/server/index.js
-```
+# Run TypeScript compilation & static asset sync
+npm run build
 
-### Verify against fixtures
+# Type check codebase
+npm run typecheck
 
-```bash
-npx tsx tmp/verify-resolver.mjs local          # offline HTML fixtures
-npx tsx tmp/verify-resolver.mjs live 44 stream # live resolve one player
+# Build and start server
+npm start
 ```
 
 ---
 
-## Known limits
+## ⚠️ Known Limits
 
-- **PLAYER 2 (cast)** — the cast embed CDN (`dollardescent.net`) returns HTTP 403 to server-side fetches; this player cannot be resolved without a browser context.
-- **Upstream variability** — embed hosts and CDN endpoints change by channel; some players may timeout or fail while others succeed.
-- **Sequential resolve** — all seven players run one after another; total time depends on slowest upstream responses (hub can take several seconds).
+> [!WARNING]
+> - **PLAYER 2 (cast)**: Upstream CDN (`dollardescent.net`) rejects non-browser requests with HTTP 403.
+> - **Upstream Changes**: Upstream stream domains frequently rotate.
 
 ---
 
-## Legal notice
+## 📄 Legal Notice
 
-This tool parses publicly reachable pages for personal research and playback. Respect applicable copyright, terms of service, and local laws. The authors are not affiliated with DaddyLive or DLHD.
+This software is for personal educational and research purposes only. All stream content belongs to their respective owners. The maintainers are not affiliated with DaddyLive or DLHD.
+

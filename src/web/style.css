@@ -48,6 +48,15 @@ body {
   text-align: center;
 }
 
+.top__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
 .top__badge {
   display: inline-flex;
   align-items: center;
@@ -61,8 +70,31 @@ body {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin-bottom: 14px;
 }
+
+.top__download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.top__download-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #6ee7b7;
+  transform: translateY(-1px);
+}
+
 
 .top__badge-dot {
   width: 6px;

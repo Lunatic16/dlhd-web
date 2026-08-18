@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 
 import { proxyStream } from "../proxy/stream.js";
 import { renderPage } from "../web/page.js";
-import { handleChannelList } from "./channels.js";
+import { handleChannelList, handlePlaylist, handleStreamResolver } from "./channels.js";
 import { handleResolveLive } from "./resolve.js";
+
 
 const PORT = Number(process.env.PORT ?? "3000");
 
@@ -50,6 +51,17 @@ createServer(async (req, res) => {
       await handleChannelList(res);
       return;
     }
+    if (url.pathname === "/playlist.m3u8") {
+      await handlePlaylist(res, url.origin);
+      return;
+    }
+    const streamMatch = url.pathname.match(/^\/api\/stream\/(\d+)\.m3u8$/);
+    if (streamMatch) {
+      const channelId = Number(streamMatch[1]);
+      await handleStreamResolver(res, channelId, url.origin);
+      return;
+    }
+
     if (url.pathname === "/api/resolve/live") {
       const channelId = Number(url.searchParams.get("channel"));
       if (!Number.isFinite(channelId) || channelId < 1) {
