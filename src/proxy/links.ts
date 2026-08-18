@@ -7,13 +7,13 @@ export function buildProxyUrl(directUrl: string, referer: string, origin: string
   return `${origin.replace(/\/$/, "")}/api/proxy?${params}`;
 }
 
-export function buildVlcCommand(directUrl: string, referer: string): string {
-  return `vlc --http-referrer ${shellQuote(referer)} ${shellQuote(directUrl)}`;
+export function buildVlcCommand(directUrl: string, referer: string, origin: string): string {
+  return `vlc --http-referrer ${shellQuote(referer)} ${shellQuote(buildProxyUrl(directUrl,referer,origin))}`;
 }
 
-export function buildMpvCommand(directUrl: string, referer: string, title?: string): string {
+export function buildMpvCommand(directUrl: string, referer: string, origin: string, title?: string): string {
   const parts = title
-    ? [`mpv --force-media-title=${shellQuote(title)}`, `--referrer=${shellQuote(referer)}`, shellQuote(directUrl)]
-    : [`mpv --referrer=${shellQuote(referer)}`, shellQuote(directUrl)];
+    ? [`mpv --force-media-title=${shellQuote(title)}`, `--referrer=${shellQuote(referer)}`, shellQuote(buildProxyUrl(directUrl,referer,origin))]
+    : [`mpv --referrer=${shellQuote(referer)}`, shellQuote(buildProxyUrl(directUrl,referer,origin))];
   return parts.join(" ");
 }
