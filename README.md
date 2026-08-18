@@ -97,7 +97,7 @@ The home page is a responsive single-screen stream dashboard:
 3. **Playback & Switch**: Playback starts automatically on the first valid stream. Tap any server badge to switch players.
 4. **Export**: Grab direct URLs, proxied URLs, or copy ready-to-run VLC / MPV terminal commands.
 
-[Screenshot](https://github.com/Lunatic16/dlhd-web/blob/main/image.png)
+[Screenshot](https://github.com/Lunatic16/dlhd-web/blob/main/UI.png)
 
 ---
 
