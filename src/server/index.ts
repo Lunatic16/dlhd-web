@@ -38,7 +38,9 @@ createServer(async (req, res) => {
       send(res, 405, "method not allowed", "text/plain");
       return;
     }
-    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+    const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() ?? "http";
+    const host = (req.headers["x-forwarded-host"] as string | undefined)?.split(",")[0]?.trim() ?? req.headers.host ?? "localhost";
+    const url = new URL(req.url ?? "/", `${proto}://${host}`);
     if (url.pathname === "/api/proxy") {
       const result = await proxyStream(url.searchParams, url.origin);
       send(res, result.status, result.body, result.type, result.headers);
