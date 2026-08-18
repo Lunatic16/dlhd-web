@@ -28,24 +28,6 @@ Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams,
 
 ---
 
-## 📋 Table of Contents
-
-1. [Quick Start](#-quick-start)
-2. [Dynamic IPTV Playlist](#-dynamic-iptv-playlist)
-3. [Running with Docker](#-running-with-docker)
-4. [Using the Web UI](#-using-the-web-ui)
-5. [Scraper vs Resolver](#-scraper-vs-resolver)
-6. [Player Endpoints](#-player-endpoints)
-7. [HTTP API](#-http-api)
-8. [Architecture](#-architecture)
-9. [Project Layout](#-project-layout)
-10. [Library API](#-library-api)
-11. [Configuration](#-configuration)
-12. [Development & Testing](#-development)
-13. [Known Limits](#-known-limits)
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
