@@ -256,8 +256,9 @@ npm start
 ## ⚠️ Known Limits
 
 > [!WARNING]
-> - **PLAYER 2 (cast)**: Upstream CDN (`dollardescent.net`) rejects non-browser requests with HTTP 403.
-> - **Upstream Changes**: Upstream stream domains frequently rotate.
+> - **PLAYER 2 (cast)**: the cast embed CDN (dollardescent.net) returns HTTP 403 to server-side fetches; this player cannot be resolved without a browser context.
+> - **Upstream Changes**: Upstream stream domains frequently rotate; some players may timeout or fail while others succeed.
+> - **Sequential resolve**: All seven players run one after another; total time depends on slowest upstream responses (hub can take several seconds).
 
 ---
 
