@@ -59,8 +59,8 @@ The resolver never calls `fetch`. You can test it offline against saved HTML in 
 ### Run locally
 
 ```bash
-git clone https://github.com/sharoon7171/daddylive-stream-resolver.git
-cd daddylive-stream-resolver
+git clone https://github.com/Lunatic16/dlhd-web.git
+cd dlhd-web
 npm install
 npm start
 ```
