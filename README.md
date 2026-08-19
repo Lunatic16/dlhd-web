@@ -20,7 +20,7 @@ Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams,
 ## ⚡ Features
 
 - 🍿 **7 Multi-Player Failovers** — Automatically resolves across 7 DLHD player embeds (`stream`, `cast`, `watch`, `plus`, `casting`, `player`, `hub`).
-- 📻 **Dynamic IPTV M3U8 Playlist** — Serves standard IPTV playlists (`GET /playlist.m3u8`) compatible with **VLC**, **TiviMate**, **Kodi**, **IPTV Smarters**, **Plex**, and **Jellyfin**.
+- 📻 **Dynamic IPTV M3U8 Playlist** — Serves standard IPTV playlists (`GET /playlist.m3u8`) compatible with **VLC**, **TiviMate**, **Kodi**, **IPTV Smarters**, **Dispatcharr**, and **Jellyfin**.
 - 🔄 **On-Demand Stream Resolver** — Redirects (`GET /api/stream/{channelId}.m3u8`) media players on-demand with live tokens.
 - 🛡️ **Referer Bypass Proxy** — Seamlessly proxies HLS master & segment playlists while injecting required upstream embed headers.
 - 🖥️ **Modern Web Interface** — Sleek dark UI with live SSE progress tracking, search filtering, and one-click VLC/MPV command builders.
