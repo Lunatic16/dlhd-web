@@ -8,5 +8,5 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
-      - DLHD_BASE=https://dlhd.st
+      - DLHD_BASE=https://dlive.sx
     restart: unless-stopped
