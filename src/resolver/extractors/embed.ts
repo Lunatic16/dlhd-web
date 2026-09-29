@@ -1,3 +1,4 @@
+import { extractAssetrageM3u8 } from "./assetrage.js";
 import { extractCdnLiveTvM3u8 } from "./cdnlivetv.js";
 import { extractDaddy3M3u8, extractDaddy3Meta } from "./daddy3.js";
 import { decryptHubConfigFromHtml, buildHubPlayableUrl } from "./hub.js";
@@ -12,12 +13,21 @@ export type PlayableResult = {
 };
 
 export function htmlMayContainPlayable(html: string): boolean {
-  return /#EXTM3U|SIGNED_URL|ENCRYPTED_CONFIG|streamUrl:|var _\w+=\[|function \w+\(s\)\{[^}]*atob|player\.load\(\{source:|https:\/\/[^"'`\s]+\.m3u8|\/premium\d+\/index\.m3u8/.test(
+  return /#EXTM3U|SIGNED_URL|ENCRYPTED_CONFIG|window\._econfig|dreamstream\.cc|streamId|streamUrl:|var _\w+=\[|function \w+\(s\)\{[^}]*atob|player\.load\(\{source:|https:\/\/[^"'`\s]+\.m3u8|\/premium\d+\/index\.m3u8/.test(
     html,
   );
 }
 
 export async function extractPlayableFromHtml(html: string): Promise<PlayableResult | null> {
+  const assetrageUrl = extractAssetrageM3u8(html);
+  if (assetrageUrl) {
+    return {
+      playableUrl: assetrageUrl,
+      mimeType: "application/x-mpegURL",
+      meta: {},
+    };
+  }
+
   const hubConfig = await decryptHubConfigFromHtml(html);
   if (hubConfig) {
     const playableUrl = buildHubPlayableUrl(hubConfig);

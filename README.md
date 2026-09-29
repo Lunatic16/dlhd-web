@@ -9,9 +9,9 @@
 
 **High-performance, referer-aware DaddyLive (DLHD) stream engine & dynamic IPTV playlist provider.**
 
-Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams, proxies traffic with referer bypass headers, provides dynamic IPTV playlist generation (`.m3u8`), and enables single-click **VLC** / **MPV** stream exports.
+Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams, proxies traffic with referer bypass headers, provides dynamic IPTV playlist generation (`.m3u8`), handles steganographic and obfuscated segment decoding, and enables single-click **VLC** / **MPV** stream exports.
 
-[Quick Start](#-quick-start) • [Dynamic IPTV Playlist](#-dynamic-iptv-playlist) • [HTTP API](#-http-api) • [Docker Deployment](#-running-with-docker) • [Architecture](#-architecture)
+[Quick Start](#-quick-start) • [Dynamic IPTV Playlist](#-dynamic-iptv-playlist) • [Streaming Engine & Relay Pipeline](#-streaming-engine--relay-pipeline) • [HTTP API](#-http-api) • [Docker Deployment](#-running-with-docker) • [Architecture](#-architecture)
 
 </div>
 
@@ -20,11 +20,14 @@ Resolves DaddyLive player embeds to direct **HLS (`.m3u8`)** & **WebM** streams,
 ## ⚡ Features
 
 - 🍿 **7 Multi-Player Failovers** — Automatically resolves across 7 DLHD player embeds (`stream`, `cast`, `watch`, `plus`, `casting`, `player`, `hub`).
+- 🔓 **PNG Pixel Steganography Unpacker** — Automatically decodes and defilters compressed MPEG-TS video packets hidden within TikTok/CDN PNG image files (`TIKTIKPX`, `TIKTIKTSGZ`, `TIKTIKRAW`), ensuring pristine playback with zero scrambled data.
+- 🧩 **Zero-Browser `_econfig` Decryption** — Pure cryptographic reverse-engineering of Player 2 (`assetrage`) 4-part permutation array slicing without requiring headless browser overhead.
+- 🛡️ **Anti-Poison Playlist Guard** — Validates upstream playlists to reject anti-bot honeypots, tracking pixel redirects, and empty error manifests.
+- ⏱️ **Live Sliding Window Synchronization** — Trims incomplete tail chunks using `#EXT-X-TARGETDURATION` to eliminate buffer stalls and audio warps.
 - 📻 **Dynamic IPTV M3U8 Playlist** — Serves standard IPTV playlists (`GET /playlist.m3u8`) compatible with **VLC**, **TiviMate**, **Kodi**, **IPTV Smarters**, **Dispatcharr**, and **Jellyfin**.
 - 🔄 **On-Demand Stream Resolver** — Redirects (`GET /api/stream/{channelId}.m3u8`) media players on-demand with live tokens.
-- 🛡️ **Referer Bypass Proxy** — Seamlessly proxies HLS master & segment playlists while injecting required upstream embed headers.
+- 🛡️ **Referer Bypass Proxy & TLS Impersonation** — Seamlessly proxies HLS master & segment playlists while injecting required upstream embed headers and browser TLS fingerprints.
 - 🖥️ **Modern Web Interface** — Sleek dark UI with live SSE progress tracking, search filtering, and one-click VLC/MPV command builders.
-- ⚡ **Pure Resolver Core** — Offline-capable decryption routines (XOR, AES-CBC, Base64, obfuscation) separated from the live network scraper.
 
 ---
 
@@ -51,6 +54,26 @@ npm start
 
 > [!TIP]
 > The server will start on `http://localhost:3000`. You can pass `PORT=8080 npm start` to bind a custom port.
+
+---
+
+## 🔬 Streaming Engine & Relay Pipeline
+
+`dlhd-web` includes a specialized HLS proxy and unpacking engine designed to defeat aggressive CDN anti-scraping and disguise tactics:
+
+### 1. Steganographic MPEG-TS Segment Unpacking (`src/proxy/segment.ts`)
+Many DaddyLive CDN nodes (such as Player 1 hosting on TikTok CDN) disguise MPEG-TS video streams as valid PNG image files:
+- **Scanline Reconstruction**: De-filters PNG image scanlines using None, Sub, Up, Average, and Paeth algorithms.
+- **Payload Extraction**: Identifies the `TIKTIKPX` header, reads payload length boundaries, and inflates the underlying gzip stream.
+- **Packet Alignment**: Validates `0x47` sync bytes at 188-byte intervals, guaranteeing strictly aligned transport stream packets for VLC, MPV, and MSE browsers.
+- Also supports WebP EXIF encapsulation, PNG `IEND` sync scanning, `TIKTIKTSGZ`, and `TIKTIKRAW` markers.
+
+### 2. Upstream Playlist Verification (`src/proxy/media.ts`)
+- Sniffs MIME types and media signatures (`#EXTM3U`, MPEG-TS, WebM).
+- Rejects poison playlists containing only static images or empty error markers.
+
+### 3. Dual-Engine HTTP Client with TLS Impersonation (`src/http.ts`)
+- Employs Chrome TLS fingerprint impersonation (`impit`) with automatic failover to prevent Cloudflare and CDN HTTP 403 blocks.
 
 ---
 
@@ -97,37 +120,21 @@ The home page is a responsive single-screen stream dashboard:
 3. **Playback & Switch**: Playback starts automatically on the first valid stream. Tap any server badge to switch players.
 4. **Export**: Grab direct URLs, proxied URLs, or copy ready-to-run VLC / MPV terminal commands.
 
-[Screenshot](https://github.com/Lunatic16/dlhd-web/blob/main/UI.png)
-
----
-
-## 🧩 Scraper vs Resolver
-
-| Aspect | 🌐 Scraper | 🔑 Resolver |
-| --- | --- | --- |
-| **Primary Input** | DLHD Watch URLs | Raw HTML strings |
-| **Output** | Parsed channel lists, embed HTML | `ResolvedStream` object (playable URL, referer) |
-| **Network Call** | Yes (`fetch` with Chrome User-Agent) | No (Pure text decryption & AST parsing) |
-| **Location** | `src/channels/`, `src/server/fetch.ts` | `src/resolver/` |
-
-> [!NOTE]
-> Separating the resolver allows zero-network unit testing against saved HTML fixtures in `tmp/`.
-
 ---
 
 ## 🎯 Player Endpoints
 
 Each UI player corresponds to a DaddyLive embed provider:
 
-| UI Label | Internal ID | DLHD Path | Status / Notes |
+| UI Label | Internal ID | DLHD Path | Upstream Engine / Status |
 | --- | --- | --- | --- |
-| **PLAYER 1** | `stream` | `/stream/stream-{id}.php` | Primary HLS stream |
-| **PLAYER 2** | `cast` | `/cast/stream-{id}.php` | Requires browser context (CDN 403 on server fetch) |
-| **PLAYER 3** | `watch` | `/watch/stream-{id}.php` | Secondary HLS stream |
-| **PLAYER 4** | `plus` | `/plus/stream-{id}.php` | Plus obfuscated player |
-| **PLAYER 5** | `casting` | `/casting/stream-{id}.php` | Casting player |
-| **PLAYER 6** | `player` | `/player/stream-{id}.php` | Alternative embed player |
-| **PLAYER 7** | `hub` | `/hub/stream-{id}.php` | WebM / HLS Hub player |
+| **PLAYER 1** | `stream` | `/stream/stream-{id}.php` | Primary edge HLS with PNG pixel steganography unpacking |
+| **PLAYER 2** | `cast` | `/cast/stream-{id}.php` | Assetrage player with pure `_econfig` decryption |
+| **PLAYER 3** | `watch` | `/watch/stream-{id}.php` | Secondary HLS stream (`daddy3.php` mirror) |
+| **PLAYER 4** | `plus` | `/plus/stream-{id}.php` | Plus player with XOR + charCode deobfuscation |
+| **PLAYER 5** | `casting` | `/casting/stream-{id}.php` | Casting player (`wikisport` / `instreams` / `cdnlivetv`) |
+| **PLAYER 6** | `player` | `/player/stream-{id}.php` | Blogger redirect embed player |
+| **PLAYER 7** | `hub` | `/hub/stream-{id}.php` | Livelive24 / WebM player with dynamic API token fetching |
 
 ---
 
@@ -142,7 +149,7 @@ All endpoints respond to **`GET`** requests:
 | `GET /api/stream/{channelId}.m3u8` | `HTTP 302 Redirect` | Resolves channel on-demand and redirects to proxied stream |
 | `GET /api/channels` | `application/json` | JSON list of available channels (`{ id, name }`) |
 | `GET /api/resolve/live?channel={id}` | `text/event-stream` | Real-time SSE stream resolving all 7 players |
-| `GET /api/proxy?url={url}&referer={ref}` | `stream/octet` | Proxies HLS manifests & segments with referer header |
+| `GET /api/proxy?url={url}&referer={ref}` | `stream/octet` | Proxies HLS manifests & unpacks segments with referer headers |
 
 ---
 
@@ -158,18 +165,22 @@ flowchart LR
   subgraph Scraper [Scraper Engine]
     Channels[channels/fetch]
     Fetch[server/fetch]
-    Http[http.ts]
+    Http[http.ts (Chrome TLS)]
   end
 
   subgraph Resolver [Resolver Core]
     Extract[extractors/embed]
     Crypto[crypto/*]
+    Assetrage[extractors/assetrage]
+    Hub[extractors/hub]
   end
 
   subgraph Server [HTTP Server]
     Routes[index.ts]
     Live[resolve.ts]
     Proxy[proxy/stream]
+    Media[proxy/media]
+    Segment[proxy/segment (Steganography Unpacker)]
     Playlist[channels/m3u8]
   end
 
@@ -178,6 +189,8 @@ flowchart LR
   Http --> Fetch
   Fetch -->|Embed HTML| Extract
   Extract --> Crypto
+  Extract --> Assetrage
+  Extract --> Hub
   Live --> Fetch
   Live --> Extract
   App -->|SSE| Live
@@ -185,6 +198,8 @@ flowchart LR
   Routes --> Page
   Routes --> Live
   Routes --> Proxy
+  Proxy --> Media
+  Proxy --> Segment
   Routes --> Playlist
 ```
 
@@ -196,35 +211,18 @@ flowchart LR
 src/
 ├── channels/       # Channel catalog scrapers & M3U8 playlist generators
 ├── players/        # Player definitions & labels (PLAYER 1–7)
-├── proxy/          # Referer-aware HLS proxy & CLI export generators
+├── proxy/          # Referer-aware HLS proxy, poison guard, & segment unpacker
+│   ├── media.ts    # Sniffing & poison playlist detection
+│   ├── segment.ts  # PNG steganography / WebP Exif / 188-byte TS packet alignment
+│   ├── stream.ts   # Sliding window live HLS sync & stream proxy
+│   └── links.ts    # VLC & MPV command builders
 ├── resolver/       # Pure HTML extractors & decryption algorithms
 │   ├── crypto/     # Base64, XOR, AES-CBC, and ad-config decryptors
-│   └── extractors/ # Individual player embed parsers
+│   └── extractors/ # Individual player embed parsers (assetrage, hub, plus, etc.)
 ├── server/         # Node.js HTTP server & SSE route handlers
 ├── web/            # Single-page web app (HTML, TS, CSS)
 ├── config.ts       # Global settings (DLHD_BASE)
 └── index.ts        # Library barrel exports
-```
-
----
-
-## 📦 Library API
-
-Use as an ES Module dependency:
-
-```typescript
-import {
-  resolveFromHtml,
-  fetchChannelList,
-  generateM3u8Playlist,
-  buildProxyUrl,
-} from "daddylive-stream-resolver";
-
-// Fetch channels
-const channels = await fetchChannelList();
-
-// Generate M3U playlist string
-const playlist = generateM3u8Playlist(channels, "http://localhost:3000");
 ```
 
 ---
@@ -255,16 +253,6 @@ npm start
 
 ---
 
-## ⚠️ Known Limits
-
-> [!WARNING]
-> - **PLAYER 2 (cast)**: the cast embed CDN (dollardescent.net) returns HTTP 403 to server-side fetches; this player cannot be resolved without a browser context.
-> - **Upstream Changes**: Upstream stream domains frequently rotate; some players may timeout or fail while others succeed.
-> - **Sequential resolve**: All seven players run one after another; total time depends on slowest upstream responses (hub can take several seconds).
-
----
-
 ## 📄 Legal Notice
 
 This software is for personal educational and research purposes only. All stream content belongs to their respective owners. The maintainers are not affiliated with DaddyLive or DLHD.
-

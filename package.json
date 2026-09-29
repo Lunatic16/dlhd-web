@@ -12,5 +12,8 @@
     "@types/node": "^24.3.0",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "impit": "^0.14.5"
   }
 }
