@@ -165,12 +165,12 @@ flowchart LR
   subgraph Scraper [Scraper Engine]
     Channels[channels/fetch]
     Fetch[server/fetch]
-    Http[http.ts (Chrome TLS)]
+    Http["http.ts (Chrome TLS)"]
   end
 
   subgraph Resolver [Resolver Core]
     Extract[extractors/embed]
-    Crypto[crypto/*]
+    Crypto["crypto/*"]
     Assetrage[extractors/assetrage]
     Hub[extractors/hub]
   end
@@ -180,7 +180,7 @@ flowchart LR
     Live[resolve.ts]
     Proxy[proxy/stream]
     Media[proxy/media]
-    Segment[proxy/segment (Steganography Unpacker)]
+    Segment["proxy/segment (Steganography Unpacker)"]
     Playlist[channels/m3u8]
   end
 
